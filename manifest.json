@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "RWGPS Tertiary Surface Check",
+  "version": "0.4.0",
+  "description": "Finds highway=tertiary roads on a RideWithGPS route that have no surface tag in OpenStreetMap, and highlights them.",
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "host_permissions": [
+    "http://localhost:8081/*",
+    "https://ridewithgps.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "scripts": [
+      "src/background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://ridewithgps.com/*"
+      ],
+      "js": [
+        "lib/leaflet.js",
+        "src/geo.js",
+        "src/postpass.js",
+        "src/match.js",
+        "src/content.js"
+      ],
+      "css": [
+        "lib/leaflet.css",
+        "src/panel.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://ridewithgps.com/*"
+      ],
+      "js": [
+        "src/page-bridge.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "rwgps-tertiary-surface@local",
+      "strict_min_version": "128.0"
+    }
+  }
+}

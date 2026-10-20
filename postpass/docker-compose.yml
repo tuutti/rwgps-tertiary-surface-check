@@ -1,0 +1,59 @@
+# Local Postpass (PostGIS + OSM Finland) for the RWGPS surface-check plugin.
+# First run: ./setup.sh   (downloads Finland, imports it, starts the API)
+# API: http://localhost:8081/interpreter
+name: rwgps-postpass
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_USER: postpass
+      POSTGRES_PASSWORD: postpass
+      POSTGRES_DB: gis
+    command: >
+      postgres
+      -c shared_buffers=1GB
+      -c effective_cache_size=4GB
+      -c work_mem=64MB
+      -c maintenance_work_mem=1GB
+      -c max_wal_size=8GB
+      -c checkpoint_timeout=30min
+      -c random_page_cost=1.1
+      -c jit=off
+    shm_size: 1g
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Mount the file, not the directory: the image's own 10_postgis.sh must still run first.
+      - ./initdb/01-readonly.sql:/docker-entrypoint-initdb.d/20-readonly.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postpass -d gis"]
+      interval: 5s
+      retries: 30
+    restart: unless-stopped
+
+  # One-shot importer, only run via `docker compose run --rm import` (see setup.sh).
+  import:
+    build: ./importer
+    profiles: [import]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      PGHOST: db
+      PGUSER: postpass
+      PGPASSWORD: postpass
+      PGDATABASE: gis
+    volumes:
+      - ./data:/data
+      - ./postpass.lua:/postpass.lua:ro
+
+  postpass:
+    build: ./server
+    depends_on:
+      db: { condition: service_healthy }
+    command: ["--db-host", "db", "--db-username", "readonly", "--db-password", "readonly", "--db-name", "gis"]
+    ports:
+      - "127.0.0.1:8081:8081"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

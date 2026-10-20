@@ -1,0 +1,16 @@
+# OSM extract downloaded by postpass/setup.sh (~770 MB); re-download with ./setup.sh --update
+postpass/data/*
+!postpass/data/.gitkeep
+
+# Packaged extension builds
+*.zip
+*.xpi
+*.crx
+*.pem
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
